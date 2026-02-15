@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>车企经营管理决策系统</title>
+<script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #4F46E5;
+  --primary-light: #818CF8;
+  --primary-dark: #3730A3;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --info: #3B82F6;
+  --bg-dark: #0F172A;
+  --bg-card: #1E293B;
+  --bg-card-hover: #334155;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border: #334155;
+  --sidebar-width: 240px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ========== Layout ========== */
+.app-layout { display: flex; min-height: 100vh; }
+
+.sidebar {
+  width: var(--sidebar-width);
+  background: linear-gradient(180deg, #1E293B 0%, #0F172A 100%);
+  border-right: 1px solid var(--border);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-logo {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo h1 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--primary-light);
+  letter-spacing: 0.5px;
+}
+
+.sidebar-logo p {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.sidebar-nav { padding: 16px 12px; flex: 1; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--text-secondary);
+  position: relative;
+}
+
+.nav-item:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+
+.nav-item.active {
+  background: var(--primary);
+  color: white;
+  font-weight: 500;
+}
+
+.nav-item .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+
+.nav-badge {
+  position: absolute;
+  right: 12px;
+  background: var(--danger);
+  color: white;
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.main-content {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  min-height: 100vh;
+}
+
+/* ========== Header ========== */
+.top-header {
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+}
+
+.header-title { font-size: 20px; font-weight: 600; }
+.header-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+.header-right { display: flex; align-items: center; gap: 16px; }
+
+.header-time { font-size: 13px; color: var(--text-secondary); }
+
+.header-avatar {
+  width: 36px; height: 36px;
+  background: var(--primary);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 600;
+}
+
+/* ========== Page Container ========== */
+.page-content { padding: 24px 32px; }
+
+/* ========== KPI Cards ========== */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s;
+  cursor: default;
+}
+
+.kpi-card:hover { border-color: var(--primary-light); transform: translateY(-2px); }
+
+.kpi-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.kpi-value .kpi-unit { font-size: 14px; color: var(--text-secondary); font-weight: 400; margin-left: 4px; }
+
+.kpi-change {
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kpi-change .up { color: var(--success); }
+.kpi-change .down { color: var(--danger); }
+
+.kpi-progress {
+  margin-top: 12px;
+  background: #1E293B;
+  border-radius: 4px;
+  height: 6px;
+  overflow: hidden;
+}
+
+.kpi-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+.kpi-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* ========== Charts ========== */
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+.chart-full { grid-column: 1 / -1; }
+
+.chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.chart-title { font-size: 15px; font-weight: 600; }
+
+.chart-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-dark);
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.chart-tab {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.chart-tab.active { background: var(--primary); color: white; }
+
+.chart-container { height: 300px; }
+
+/* ========== Table ========== */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.data-table tr:hover td { background: rgba(79, 70, 229, 0.05); }
+
+/* ========== Warning Page ========== */
+.warning-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.warning-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.warning-stat-card .stat-num {
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.warning-stat-card .stat-label { font-size: 12px; color: var(--text-muted); }
+
+.warning-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  transition: all 0.2s;
+}
+
+.filter-btn.active, .filter-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.warning-list { display: flex; flex-direction: column; gap: 12px; }
+
+.warning-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 4px solid transparent;
+}
+
+.warning-item:hover { border-color: var(--primary-light); transform: translateX(4px); }
+.warning-item.severity-critical { border-left-color: var(--danger); }
+.warning-item.severity-high { border-left-color: var(--warning); }
+.warning-item.severity-medium { border-left-color: var(--info); }
+.warning-item.severity-low { border-left-color: var(--success); }
+
+.warning-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.warning-item-title { font-size: 15px; font-weight: 600; flex: 1; }
+
+.severity-badge {
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.severity-badge.critical { background: rgba(239,68,68,0.15); color: #FCA5A5; }
+.severity-badge.high { background: rgba(245,158,11,0.15); color: #FCD34D; }
+.severity-badge.medium { background: rgba(59,130,246,0.15); color: #93C5FD; }
+.severity-badge.low { background: rgba(16,185,129,0.15); color: #6EE7B7; }
+
+.warning-item-desc { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.6; }
+
+.warning-item-meta {
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.warning-meta-item { display: flex; align-items: center; gap: 4px; }
+
+/* ========== AI Diagnosis ========== */
+.diagnosis-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.diagnosis-option {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-align: center;
+}
+
+.diagnosis-option:hover { border-color: var(--primary-light); }
+.diagnosis-option.active { border-color: var(--primary); background: rgba(79, 70, 229, 0.1); }
+
+.diagnosis-option .diag-icon { font-size: 36px; margin-bottom: 12px; }
+.diagnosis-option .diag-label { font-size: 15px; font-weight: 600; }
+
+.diagnosis-result {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.diag-section { margin-bottom: 24px; }
+.diag-section:last-child { margin-bottom: 0; }
+.diag-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.diag-summary { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 16px; }
+
+.root-cause-item {
+  background: var(--bg-dark);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 8px;
+}
+
+.root-cause-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.root-cause-factor { font-size: 14px; font-weight: 600; }
+
+.root-cause-weight {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: rgba(79,70,229,0.2);
+  color: var(--primary-light);
+}
+
+.root-cause-bar {
+  height: 6px;
+  background: #1E293B;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.root-cause-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--primary-light));
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+
+.root-cause-detail { font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+
+.recommendation-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.recommendation-item:last-child { border-bottom: none; }
+
+.rec-priority {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  height: fit-content;
+  margin-top: 2px;
+}
+
+.rec-priority-高 { background: rgba(239,68,68,0.15); color: #FCA5A5; }
+.rec-priority-中 { background: rgba(245,158,11,0.15); color: #FCD34D; }
+.rec-priority-低 { background: rgba(16,185,129,0.15); color: #6EE7B7; }
+
+.rec-action { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+.diag-confidence {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--bg-dark);
+  border-radius: 8px;
+}
+
+.confidence-bar {
+  flex: 1;
+  height: 8px;
+  background: #334155;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--success), #34D399);
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+.confidence-text { font-size: 14px; font-weight: 600; color: var(--success); }
+
+/* ========== Issue Tracking ========== */
+.issue-stats {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.issue-stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  text-align: center;
+}
+
+.issue-stat-card .stat-num { font-size: 28px; font-weight: 700; }
+.issue-stat-card .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+.issue-list { display: flex; flex-direction: column; gap: 12px; }
+
+.issue-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.issue-card:hover { border-color: var(--primary-light); }
+
+.issue-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.issue-id { font-size: 12px; color: var(--primary-light); font-weight: 600; }
+.issue-title { font-size: 15px; font-weight: 600; margin-top: 4px; }
+
+.issue-badges { display: flex; gap: 8px; }
+
+.status-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge.pending { background: rgba(245,158,11,0.15); color: #FCD34D; }
+.status-badge.in_progress { background: rgba(59,130,246,0.15); color: #93C5FD; }
+.status-badge.completed { background: rgba(16,185,129,0.15); color: #6EE7B7; }
+
+.priority-badge {
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.priority-badge.critical { background: rgba(239,68,68,0.15); color: #FCA5A5; }
+.priority-badge.high { background: rgba(245,158,11,0.15); color: #FCD34D; }
+.priority-badge.medium { background: rgba(59,130,246,0.15); color: #93C5FD; }
+.priority-badge.low { background: rgba(16,185,129,0.15); color: #6EE7B7; }
+
+.issue-meta {
+  display: flex;
+  gap: 24px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.issue-progress-bar {
+  height: 6px;
+  background: var(--bg-dark);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.issue-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--success));
+  border-radius: 3px;
+  transition: width 0.5s;
+}
+
+.issue-progress-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.issue-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.action-chip {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.action-chip.done { text-decoration: line-through; opacity: 0.6; }
+.action-chip.doing { border-color: var(--primary-light); color: var(--primary-light); }
+
+/* ========== Issue Detail Modal ========== */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.modal-content {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  width: 720px;
+  max-height: 85vh;
+  overflow-y: auto;
+  padding: 32px;
+}
+
+.modal-close {
+  float: right;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.modal-close:hover { color: var(--text-primary); }
+
+.timeline {
+  position: relative;
+  padding-left: 28px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 8px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 20px;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--bg-card);
+}
+
+.timeline-item.type-create::before { background: var(--info); }
+.timeline-item.type-assign::before { background: var(--warning); }
+.timeline-item.type-update::before { background: var(--primary-light); }
+.timeline-item.type-approve::before { background: var(--success); }
+.timeline-item.type-close::before { background: var(--text-muted); }
+.timeline-item.type-escalate::before { background: var(--danger); }
+.timeline-item.type-comment::before { background: #A78BFA; }
+
+.timeline-time { font-size: 11px; color: var(--text-muted); }
+.timeline-event { font-size: 13px; color: var(--text-secondary); margin-top: 2px; line-height: 1.5; }
+.timeline-user { font-size: 11px; color: var(--primary-light); margin-top: 2px; }
+
+/* ========== Animations ========== */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.fade-in { animation: fadeIn 0.4s ease-out; }
+.slide-in { animation: slideIn 0.3s ease-out; }
+
+.loading-dot { animation: pulse 1.5s infinite; }
+
+/* ========== AI Typing Effect ========== */
+.ai-typing {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  padding: 8px 16px;
+  background: rgba(79,70,229,0.1);
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.ai-typing span {
+  width: 6px; height: 6px;
+  background: var(--primary-light);
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+.ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+.ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+.ai-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  background: linear-gradient(135deg, rgba(79,70,229,0.2), rgba(129,140,248,0.2));
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--primary-light);
+}
+
+/* ========== Responsive ========== */
+@media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main-content { margin-left: 0; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  .chart-grid { grid-template-columns: 1fr; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Warning detail modal */
+.warning-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.warning-detail-item {
+  background: var(--bg-dark);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.warning-detail-item .label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+.warning-detail-item .value { font-size: 15px; font-weight: 600; }
+
+/* Btn */
+.btn {
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-secondary); }
+.btn-outline:hover { border-color: var(--primary-light); color: var(--primary-light); }
+.btn-danger { background: rgba(239,68,68,0.15); color: #FCA5A5; }
+.btn-success { background: rgba(16,185,129,0.15); color: #6EE7B7; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <h1>AutoPilot</h1>
+        <p>车企经营管理决策系统</p>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-item" :class="{active: currentPage === 'dashboard'}" @click="currentPage = 'dashboard'">
+          <span class="nav-icon">📊</span>
+          <span>经营看板</span>
+        </div>
+        <div class="nav-item" :class="{active: currentPage === 'warnings'}" @click="currentPage = 'warnings'">
+          <span class="nav-icon">🔔</span>
+          <span>预警中心</span>
+          <span class="nav-badge" v-if="warningStats.active">{{ warningStats.active }}</span>
+        </div>
+        <div class="nav-item" :class="{active: currentPage === 'diagnosis'}" @click="currentPage = 'diagnosis'">
+          <span class="nav-icon">🤖</span>
+          <span>AI 诊断</span>
+        </div>
+        <div class="nav-item" :class="{active: currentPage === 'issues'}" @click="currentPage = 'issues'">
+          <span class="nav-icon">📋</span>
+          <span>问题跟踪</span>
+          <span class="nav-badge" v-if="issueStats.critical" style="background:#F59E0B">{{ issueStats.critical }}</span>
+        </div>
+      </nav>
+      <div style="padding: 16px 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-muted);">
+        v1.0.0 Demo
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="top-header">
+        <div>
+          <div class="header-title">{{ pageTitle }}</div>
+          <div class="header-subtitle">{{ pageSubtitle }}</div>
+        </div>
+        <div class="header-right">
+          <div class="header-time">{{ currentTime }}</div>
+          <div class="header-avatar">管</div>
+        </div>
+      </header>
+
+      <!-- Dashboard Page -->
+      <div class="page-content fade-in" v-if="currentPage === 'dashboard'">
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card" v-for="(kpi, key) in kpiData" :key="key">
+            <div class="kpi-label">
+              <span>{{ kpiLabels[key] }}</span>
+            </div>
+            <div class="kpi-value">{{ kpi.value }}<span class="kpi-unit">{{ kpi.unit }}</span></div>
+            <div class="kpi-change">
+              <span :class="kpi.yoy >= 0 ? 'up' : 'down'">
+                {{ kpi.yoy >= 0 ? '↑' : '↓' }} 同比 {{ Math.abs(kpi.yoy) }}%
+              </span>
+              <span :class="kpi.mom >= 0 ? 'up' : 'down'">
+                {{ kpi.mom >= 0 ? '↑' : '↓' }} 环比 {{ Math.abs(kpi.mom) }}%
+              </span>
+            </div>
+            <div class="kpi-progress">
+              <div class="kpi-progress-bar" :style="{
+                width: kpi.progress + '%',
+                background: kpi.progress >= 95 ? 'var(--success)' : kpi.progress >= 85 ? 'var(--warning)' : 'var(--danger)'
+              }"></div>
+            </div>
+            <div class="kpi-progress-label">
+              <span>目标完成率</span>
+              <span>{{ kpi.progress }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="chart-grid">
+          <div class="chart-card chart-full">
+            <div class="chart-header">
+              <span class="chart-title">经营趋势</span>
+              <div class="chart-tabs">
+                <span class="chart-tab" :class="{active: trendMetric === 'revenue'}" @click="trendMetric='revenue'; renderTrendChart()">营收</span>
+                <span class="chart-tab" :class="{active: trendMetric === 'sales_volume'}" @click="trendMetric='sales_volume'; renderTrendChart()">销量</span>
+                <span class="chart-tab" :class="{active: trendMetric === 'production_volume'}" @click="trendMetric='production_volume'; renderTrendChart()">产量</span>
+                <span class="chart-tab" :class="{active: trendMetric === 'gross_margin'}" @click="trendMetric='gross_margin'; renderTrendChart()">毛利率</span>
+              </div>
+            </div>
+            <div id="trendChart" class="chart-container"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-title">品牌销量分布</span>
+            </div>
+            <div id="brandPieChart" class="chart-container"></div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <span class="chart-title">区域销量排名</span>
+            </div>
+            <div id="regionBarChart" class="chart-container"></div>
+          </div>
+        </div>
+
+        <!-- Brand Table -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">品牌经营明细</span>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>品牌</th>
+                <th>销量 (万辆)</th>
+                <th>营收 (亿元)</th>
+                <th>同比增长</th>
+                <th>市场占有率</th>
+                <th>毛利率</th>
+                <th>库存天数</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="b in brandData" :key="b.brand">
+                <td style="font-weight:600; color:var(--text-primary)">{{ b.brand }}</td>
+                <td>{{ b.sales_volume }}</td>
+                <td>{{ b.revenue }}</td>
+                <td>
+                  <span :style="{color: b.yoy_growth >= 0 ? 'var(--success)' : 'var(--danger)'}">
+                    {{ b.yoy_growth >= 0 ? '+' : '' }}{{ b.yoy_growth }}%
+                  </span>
+                </td>
+                <td>{{ b.market_share }}%</td>
+                <td>{{ b.gross_margin }}%</td>
+                <td :style="{color: b.inventory_days > 45 ? 'var(--danger)' : 'var(--text-secondary)'}">{{ b.inventory_days }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Warnings Page -->
+      <div class="page-content fade-in" v-if="currentPage === 'warnings'">
+        <div class="warning-stats">
+          <div class="warning-stat-card">
+            <div class="stat-num" style="color:var(--text-primary)">{{ warningStats.total }}</div>
+            <div class="stat-label">预警总数</div>
+          </div>
+          <div class="warning-stat-card">
+            <div class="stat-num" style="color:var(--warning)">{{ warningStats.active }}</div>
+            <div class="stat-label">活跃预警</div>
+          </div>
+          <div class="warning-stat-card">
+            <div class="stat-num" style="color:var(--danger)">{{ warningStats.critical }}</div>
+            <div class="stat-label">严重预警</div>
+          </div>
+          <div class="warning-stat-card">
+            <div class="stat-num" style="color:var(--warning)">{{ warningStats.high }}</div>
+            <div class="stat-label">高级预警</div>
+          </div>
+          <div class="warning-stat-card">
+            <div class="stat-num" style="color:var(--success)">{{ warningStats.resolved }}</div>
+            <div class="stat-label">已解决</div>
+          </div>
+        </div>
+
+        <div class="warning-filters">
+          <span class="filter-btn" :class="{active: warningFilter === 'all'}" @click="warningFilter='all'">全部</span>
+          <span class="filter-btn" :class="{active: warningFilter === 'critical'}" @click="warningFilter='critical'">严重</span>
+          <span class="filter-btn" :class="{active: warningFilter === 'high'}" @click="warningFilter='high'">高</span>
+          <span class="filter-btn" :class="{active: warningFilter === 'medium'}" @click="warningFilter='medium'">中</span>
+          <span class="filter-btn" :class="{active: warningFilter === 'low'}" @click="warningFilter='low'">低</span>
+          <span style="flex:1"></span>
+          <span class="filter-btn" :class="{active: warningStatusFilter === 'all'}" @click="warningStatusFilter='all'">全部状态</span>
+          <span class="filter-btn" :class="{active: warningStatusFilter === 'active'}" @click="warningStatusFilter='active'">活跃</span>
+          <span class="filter-btn" :class="{active: warningStatusFilter === 'resolved'}" @click="warningStatusFilter='resolved'">已解决</span>
+        </div>
+
+        <div class="warning-list">
+          <div class="warning-item slide-in" :class="'severity-' + w.severity"
+               v-for="w in filteredWarnings" :key="w.id"
+               @click="showWarningDetail(w)">
+            <div class="warning-item-header">
+              <div>
+                <span style="font-size:11px; color:var(--text-muted); margin-right:8px;">{{ w.id }}</span>
+                <span class="severity-badge" :class="w.severity">{{ severityLabels[w.severity] }}</span>
+                <span class="status-badge" :class="w.status" style="margin-left:6px;">{{ w.status === 'active' ? '活跃' : '已解决' }}</span>
+              </div>
+            </div>
+            <div class="warning-item-title" style="margin:8px 0;">{{ w.title }}</div>
+            <div class="warning-item-desc">{{ w.description }}</div>
+            <div class="warning-item-meta">
+              <span class="warning-meta-item">📌 {{ w.type_name }}</span>
+              <span class="warning-meta-item">📍 {{ w.affected_region }}</span>
+              <span class="warning-meta-item">🏷️ {{ w.affected_brand }}</span>
+              <span class="warning-meta-item">📅 {{ w.created_at }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Warning Detail Modal -->
+        <div class="modal-overlay" v-if="selectedWarning" @click.self="selectedWarning=null">
+          <div class="modal-content fade-in">
+            <button class="modal-close" @click="selectedWarning=null">&times;</button>
+            <div style="margin-bottom:8px;">
+              <span class="severity-badge" :class="selectedWarning.severity">{{ severityLabels[selectedWarning.severity] }}</span>
+              <span class="status-badge" :class="selectedWarning.status" style="margin-left:6px;">{{ selectedWarning.status === 'active' ? '活跃' : '已解决' }}</span>
+            </div>
+            <h2 style="font-size:18px; margin-bottom:16px;">{{ selectedWarning.title }}</h2>
+            <p style="font-size:14px; color:var(--text-secondary); line-height:1.7; margin-bottom:20px;">{{ selectedWarning.description }}</p>
+
+            <div class="warning-detail-grid">
+              <div class="warning-detail-item">
+                <div class="label">监控指标</div>
+                <div class="value">{{ selectedWarning.metric }}</div>
+              </div>
+              <div class="warning-detail-item">
+                <div class="label">当前值</div>
+                <div class="value" style="color:var(--danger)">{{ selectedWarning.current_value }}</div>
+              </div>
+              <div class="warning-detail-item">
+                <div class="label">预警阈值</div>
+                <div class="value">{{ selectedWarning.threshold }}</div>
+              </div>
+              <div class="warning-detail-item">
+                <div class="label">偏离幅度</div>
+                <div class="value" style="color:var(--warning)">{{ selectedWarning.deviation }}</div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:8px; margin-top:20px;">
+              <button class="btn btn-primary" @click="navigateToDiagnosis(selectedWarning)">🤖 AI 诊断分析</button>
+              <button class="btn btn-outline" @click="createIssueFromWarning(selectedWarning)">📋 创建跟踪工单</button>
+              <button class="btn btn-danger" v-if="!selectedWarning.acknowledged">确认预警</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Diagnosis Page -->
+      <div class="page-content fade-in" v-if="currentPage === 'diagnosis'">
+        <div class="diagnosis-selector">
+          <div class="diagnosis-option" :class="{active: diagType === 'sales_decline'}" @click="runDiagnosis('sales_decline')">
+            <div class="diag-icon">📉</div>
+            <div class="diag-label">销量下滑分析</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">诊断销量异常原因</div>
+          </div>
+          <div class="diagnosis-option" :class="{active: diagType === 'inventory_excess'}" @click="runDiagnosis('inventory_excess')">
+            <div class="diag-icon">📦</div>
+            <div class="diag-label">库存积压分析</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">分析库存异常根因</div>
+          </div>
+          <div class="diagnosis-option" :class="{active: diagType === 'profit_decline'}" @click="runDiagnosis('profit_decline')">
+            <div class="diag-icon">💰</div>
+            <div class="diag-label">利润下滑分析</div>
+            <div style="font-size:12px; color:var(--text-muted); margin-top:6px;">利润率下降归因</div>
+          </div>
+        </div>
+
+        <!-- Loading -->
+        <div v-if="diagLoading" style="text-align:center; padding:40px;">
+          <div class="ai-typing">
+            <span></span><span></span><span></span>
+          </div>
+          <div style="margin-top:12px; color:var(--text-muted); font-size:13px;">AI 正在分析数据，生成诊断报告...</div>
+        </div>
+
+        <!-- Diagnosis Result -->
+        <div v-if="diagResult && !diagLoading">
+          <div style="margin-bottom:16px;">
+            <span class="ai-tag">🤖 AI 智能诊断</span>
+            <span style="font-size:12px; color:var(--text-muted); margin-left:8px;">基于多维数据分析的智能归因</span>
+          </div>
+
+          <div class="diagnosis-result">
+            <div class="diag-section">
+              <div class="diag-section-title">📋 {{ diagResult.title }}</div>
+              <div class="diag-summary">{{ diagResult.summary }}</div>
+            </div>
+
+            <div class="diag-section">
+              <div class="diag-section-title">🔍 根因分析</div>
+              <div id="rootCauseChart" style="height:260px; margin-bottom:16px;"></div>
+              <div class="root-cause-item" v-for="(cause, idx) in diagResult.root_causes" :key="idx">
+                <div class="root-cause-header">
+                  <span class="root-cause-factor">{{ idx + 1 }}. {{ cause.factor }}</span>
+                  <span class="root-cause-weight">影响权重 {{ cause.weight }}%</span>
+                </div>
+                <div class="root-cause-bar">
+                  <div class="root-cause-bar-fill" :style="{width: cause.weight + '%'}"></div>
+                </div>
+                <div class="root-cause-detail">{{ cause.detail }}</div>
+              </div>
+            </div>
+
+            <div class="diag-section">
+              <div class="diag-section-title">💡 改进建议</div>
+              <div class="recommendation-item" v-for="(rec, idx) in diagResult.recommendations" :key="idx">
+                <span class="rec-priority" :class="'rec-priority-' + rec.priority">{{ rec.priority }}</span>
+                <span class="rec-action">{{ rec.action }}</span>
+              </div>
+            </div>
+
+            <div class="diag-section">
+              <div class="diag-section-title">📈 预测影响</div>
+              <div class="diag-summary">{{ diagResult.predicted_impact }}</div>
+              <div class="diag-confidence">
+                <span style="font-size:13px; color:var(--text-secondary); white-space:nowrap;">分析置信度</span>
+                <div class="confidence-bar">
+                  <div class="confidence-fill" :style="{width: diagResult.confidence + '%'}"></div>
+                </div>
+                <span class="confidence-text">{{ diagResult.confidence }}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue Tracking Page -->
+      <div class="page-content fade-in" v-if="currentPage === 'issues'">
+        <div class="issue-stats">
+          <div class="issue-stat-card">
+            <div class="stat-num" style="color:var(--text-primary)">{{ issueStats.total }}</div>
+            <div class="stat-label">问题总数</div>
+          </div>
+          <div class="issue-stat-card">
+            <div class="stat-num" style="color:var(--warning)">{{ issueStats.pending }}</div>
+            <div class="stat-label">待处理</div>
+          </div>
+          <div class="issue-stat-card">
+            <div class="stat-num" style="color:var(--info)">{{ issueStats.in_progress }}</div>
+            <div class="stat-label">处理中</div>
+          </div>
+          <div class="issue-stat-card">
+            <div class="stat-num" style="color:var(--success)">{{ issueStats.completed }}</div>
+            <div class="stat-label">已完成</div>
+          </div>
+          <div class="issue-stat-card">
+            <div class="stat-num" style="color:var(--danger)">{{ issueStats.critical }}</div>
+            <div class="stat-label">紧急问题</div>
+          </div>
+          <div class="issue-stat-card">
+            <div class="stat-num" style="color:var(--danger)">{{ issueStats.overdue }}</div>
+            <div class="stat-label">已逾期</div>
+          </div>
+        </div>
+
+        <div class="warning-filters" style="margin-bottom:16px;">
+          <span class="filter-btn" :class="{active: issueFilter === 'all'}" @click="issueFilter='all'">全部</span>
+          <span class="filter-btn" :class="{active: issueFilter === 'pending'}" @click="issueFilter='pending'">待处理</span>
+          <span class="filter-btn" :class="{active: issueFilter === 'in_progress'}" @click="issueFilter='in_progress'">处理中</span>
+          <span class="filter-btn" :class="{active: issueFilter === 'completed'}" @click="issueFilter='completed'">已完成</span>
+        </div>
+
+        <div class="issue-list">
+          <div class="issue-card slide-in" v-for="issue in filteredIssues" :key="issue.id" @click="showIssueDetail(issue)">
+            <div class="issue-card-header">
+              <div>
+                <div class="issue-id">{{ issue.id }}</div>
+                <div class="issue-title">{{ issue.title }}</div>
+              </div>
+              <div class="issue-badges">
+                <span class="priority-badge" :class="issue.priority">{{ priorityLabels[issue.priority] }}</span>
+                <span class="status-badge" :class="issue.status">{{ statusLabels[issue.status] }}</span>
+              </div>
+            </div>
+            <div style="font-size:13px; color:var(--text-secondary); margin-bottom:12px;">{{ issue.description }}</div>
+            <div class="issue-meta">
+              <span>👤 {{ issue.owner }}</span>
+              <span>🏢 {{ issue.department }}</span>
+              <span>📅 截止: {{ issue.due_date }}</span>
+              <span>🔗 来源: {{ issue.source_warning }}</span>
+            </div>
+            <div class="issue-progress-bar" style="margin-top:12px;">
+              <div class="issue-progress-fill" :style="{width: issue.progress + '%'}"></div>
+            </div>
+            <div class="issue-progress-text">
+              <span>进度</span>
+              <span>{{ issue.progress }}%</span>
+            </div>
+            <div class="issue-actions">
+              <span class="action-chip" v-for="(a, idx) in issue.action_items" :key="idx"
+                    :class="{done: a.status === 'completed', doing: a.status === 'in_progress'}">
+                {{ a.status === 'completed' ? '✓' : a.status === 'in_progress' ? '●' : '○' }} {{ a.task.length > 20 ? a.task.substring(0, 20) + '...' : a.task }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Issue Detail Modal -->
+        <div class="modal-overlay" v-if="selectedIssue" @click.self="selectedIssue=null">
+          <div class="modal-content fade-in">
+            <button class="modal-close" @click="selectedIssue=null">&times;</button>
+            <div style="display:flex; gap:8px; margin-bottom:12px;">
+              <span class="issue-id" style="font-size:14px;">{{ selectedIssue.id }}</span>
+              <span class="priority-badge" :class="selectedIssue.priority">{{ priorityLabels[selectedIssue.priority] }}</span>
+              <span class="status-badge" :class="selectedIssue.status">{{ statusLabels[selectedIssue.status] }}</span>
+            </div>
+            <h2 style="font-size:18px; margin-bottom:8px;">{{ selectedIssue.title }}</h2>
+            <p style="font-size:13px; color:var(--text-secondary); margin-bottom:16px;">{{ selectedIssue.description }}</p>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px;">
+              <div class="warning-detail-item">
+                <div class="label">负责人</div>
+                <div class="value" style="font-size:14px;">{{ selectedIssue.owner }}</div>
+              </div>
+              <div class="warning-detail-item">
+                <div class="label">部门</div>
+                <div class="value" style="font-size:14px;">{{ selectedIssue.department }}</div>
+              </div>
+              <div class="warning-detail-item">
+                <div class="label">创建时间</div>
+                <div class="value" style="font-size:14px;">{{ selectedIssue.created_at }}</div>
+              </div>
+              <div class="warning-detail-item">
+                <div class="label">截止日期</div>
+                <div class="value" style="font-size:14px;">{{ selectedIssue.due_date }}</div>
+              </div>
+            </div>
+
+            <div style="margin-bottom:20px;">
+              <div style="font-size:14px; font-weight:600; margin-bottom:12px;">📋 行动项</div>
+              <div v-for="(a, idx) in selectedIssue.action_items" :key="idx"
+                   style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border);">
+                <span :style="{
+                  width:'20px', height:'20px', borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px',
+                  background: a.status==='completed' ? 'var(--success)' : a.status==='in_progress' ? 'var(--info)' : 'var(--border)',
+                  color: 'white'
+                }">
+                  {{ a.status === 'completed' ? '✓' : a.status === 'in_progress' ? '●' : '' }}
+                </span>
+                <span style="flex:1; font-size:13px;" :style="{textDecoration: a.status==='completed' ? 'line-through' : 'none', color: a.status==='completed' ? 'var(--text-muted)' : 'var(--text-secondary)'}">
+                  {{ a.task }}
+                </span>
+                <span style="font-size:11px; color:var(--text-muted);">截止: {{ a.due }}</span>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size:14px; font-weight:600; margin-bottom:12px;">🕐 处理时间线</div>
+              <div class="timeline">
+                <div class="timeline-item" :class="'type-' + t.type" v-for="(t, idx) in selectedIssue.timeline" :key="idx">
+                  <div class="timeline-time">{{ t.time }}</div>
+                  <div class="timeline-event">{{ t.event }}</div>
+                  <div class="timeline-user">操作人: {{ t.user }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+
+createApp({
+  setup() {
+    const currentPage = ref('dashboard');
+    const currentTime = ref('');
+
+    // Dashboard data
+    const kpiData = ref({});
+    const trendData = ref({});
+    const brandData = ref([]);
+    const regionData = ref([]);
+    const trendMetric = ref('revenue');
+
+    // Warning data
+    const warningStats = ref({ total: 0, active: 0, critical: 0, high: 0, resolved: 0 });
+    const warnings = ref([]);
+    const warningFilter = ref('all');
+    const warningStatusFilter = ref('all');
+    const selectedWarning = ref(null);
+
+    // Diagnosis data
+    const diagType = ref('');
+    const diagResult = ref(null);
+    const diagLoading = ref(false);
+
+    // Issue data
+    const issueStats = ref({ total: 0, pending: 0, in_progress: 0, completed: 0, critical: 0, overdue: 0 });
+    const issues = ref([]);
+    const issueFilter = ref('all');
+    const selectedIssue = ref(null);
+
+    // Charts
+    let trendChart = null;
+    let brandPieChart = null;
+    let regionBarChart = null;
+    let rootCauseChart = null;
+
+    const kpiLabels = {
+      revenue: '营业收入', sales_volume: '销量', production_volume: '产量',
+      gross_margin: '毛利率', inventory_days: '库存周转天数', market_share: '市场占有率',
+      customer_satisfaction: '客户满意度', nev_penetration: '新能源渗透率'
+    };
+
+    const severityLabels = { critical: '严重', high: '高', medium: '中', low: '低' };
+    const statusLabels = { pending: '待处理', in_progress: '处理中', completed: '已完成', closed: '已关闭' };
+    const priorityLabels = { critical: '紧急', high: '高', medium: '中', low: '低' };
+
+    const trendMetricLabels = {
+      revenue: '营收 (亿元)', sales_volume: '销量 (万辆)',
+      production_volume: '产量 (万辆)', gross_margin: '毛利率 (%)'
+    };
+
+    const pageTitle = computed(() => ({
+      dashboard: '经营看板', warnings: '预警中心', diagnosis: 'AI 智能诊断', issues: '问题跟踪闭环'
+    }[currentPage.value]));
+
+    const pageSubtitle = computed(() => ({
+      dashboard: '实时监控企业经营核心指标',
+      warnings: '异常指标自动预警与通知',
+      diagnosis: '基于AI的指标异常根因分析',
+      issues: '预警问题全流程跟踪管理',
+    }[currentPage.value]));
+
+    const filteredWarnings = computed(() => {
+      let list = warnings.value;
+      if (warningFilter.value !== 'all') list = list.filter(w => w.severity === warningFilter.value);
+      if (warningStatusFilter.value !== 'all') list = list.filter(w => w.status === warningStatusFilter.value);
+      return list;
+    });
+
+    const filteredIssues = computed(() => {
+      if (issueFilter.value === 'all') return issues.value;
+      return issues.value.filter(i => i.status === issueFilter.value);
+    });
+
+    // Fetch data
+    async function fetchDashboard() {
+      const [overviewRes, trendsRes, brandsRes, regionsRes] = await Promise.all([
+        fetch('/api/dashboard/overview').then(r => r.json()),
+        fetch('/api/dashboard/trends').then(r => r.json()),
+        fetch('/api/dashboard/brands').then(r => r.json()),
+        fetch('/api/dashboard/regions').then(r => r.json()),
+      ]);
+      kpiData.value = overviewRes.data;
+      trendData.value = trendsRes.data;
+      brandData.value = brandsRes.data;
+      regionData.value = regionsRes.data;
+    }
+
+    async function fetchWarnings() {
+      const [statsRes, listRes] = await Promise.all([
+        fetch('/api/warnings/stats').then(r => r.json()),
+        fetch('/api/warnings').then(r => r.json()),
+      ]);
+      warningStats.value = statsRes.data;
+      warnings.value = listRes.data;
+    }
+
+    async function fetchIssues() {
+      const [statsRes, listRes] = await Promise.all([
+        fetch('/api/issues/stats').then(r => r.json()),
+        fetch('/api/issues').then(r => r.json()),
+      ]);
+      issueStats.value = statsRes.data;
+      issues.value = listRes.data;
+    }
+
+    // Chart rendering
+    function renderTrendChart() {
+      const el = document.getElementById('trendChart');
+      if (!el) return;
+      if (!trendChart) trendChart = echarts.init(el, 'dark');
+      const metric = trendMetric.value;
+      const colors = {
+        revenue: ['#818CF8', '#4F46E5'],
+        sales_volume: ['#34D399', '#10B981'],
+        production_volume: ['#60A5FA', '#3B82F6'],
+        gross_margin: ['#FBBF24', '#F59E0B'],
+      };
+
+      trendChart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', backgroundColor: '#1E293B', borderColor: '#334155', textStyle: { color: '#F1F5F9' } },
+        grid: { left: 50, right: 30, top: 30, bottom: 30 },
+        xAxis: { type: 'category', data: trendData.value.months, axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94A3B8', fontSize: 11 } },
+        yAxis: { type: 'value', name: trendMetricLabels[metric], nameTextStyle: { color: '#94A3B8', fontSize: 11 }, splitLine: { lineStyle: { color: '#1E293B' } }, axisLabel: { color: '#94A3B8', fontSize: 11 } },
+        series: [{
+          type: 'line',
+          data: trendData.value[metric],
+          smooth: true,
+          symbol: 'circle',
+          symbolSize: 6,
+          lineStyle: { width: 3, color: colors[metric][0] },
+          itemStyle: { color: colors[metric][0] },
+          areaStyle: {
+            color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [{ offset: 0, color: colors[metric][0] + '40' }, { offset: 1, color: colors[metric][1] + '05' }]
+            }
+          },
+        }],
+        animationDuration: 800,
+      });
+    }
+
+    function renderBrandPieChart() {
+      const el = document.getElementById('brandPieChart');
+      if (!el || !brandData.value.length) return;
+      if (!brandPieChart) brandPieChart = echarts.init(el, 'dark');
+      brandPieChart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'item', backgroundColor: '#1E293B', borderColor: '#334155', textStyle: { color: '#F1F5F9' } },
+        legend: { orient: 'vertical', right: 10, top: 'center', textStyle: { color: '#94A3B8', fontSize: 12 } },
+        series: [{
+          type: 'pie', radius: ['40%', '70%'], center: ['40%', '50%'],
+          label: { show: false },
+          emphasis: { label: { show: true, fontSize: 14, fontWeight: 'bold' } },
+          data: brandData.value.map(b => ({ name: b.brand, value: b.sales_volume })),
+          itemStyle: { borderRadius: 6, borderColor: '#1E293B', borderWidth: 2 },
+          color: ['#818CF8', '#34D399', '#60A5FA', '#FBBF24', '#F472B6'],
+        }],
+        animationDuration: 800,
+      });
+    }
+
+    function renderRegionBarChart() {
+      const el = document.getElementById('regionBarChart');
+      if (!el || !regionData.value.length) return;
+      if (!regionBarChart) regionBarChart = echarts.init(el, 'dark');
+      const sorted = [...regionData.value].sort((a, b) => a.sales_volume - b.sales_volume);
+      regionBarChart.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis', backgroundColor: '#1E293B', borderColor: '#334155', textStyle: { color: '#F1F5F9' } },
+        grid: { left: 60, right: 30, top: 10, bottom: 30 },
+        xAxis: { type: 'value', splitLine: { lineStyle: { color: '#1E293B' } }, axisLabel: { color: '#94A3B8', fontSize: 11 } },
+        yAxis: { type: 'category', data: sorted.map(r => r.region), axisLine: { lineStyle: { color: '#334155' } }, axisLabel: { color: '#94A3B8', fontSize: 11 } },
+        series: [{
+          type: 'bar', barWidth: 16, data: sorted.map(r => r.sales_volume),
+          itemStyle: {
+            borderRadius: [0, 4, 4, 0],
+            color: { type: 'linear', x: 0, y: 0, x2: 1, y2: 0,
+              colorStops: [{ offset: 0, color: '#4F46E5' }, { offset: 1, color: '#818CF8' }]
+            }
+          },
+          label: { show: true, position: 'right', color: '#94A3B8', fontSize: 11, formatter: '{c} 万辆' },
+        }],
+        animationDuration: 800,
+      });
+    }
+
+    function renderRootCauseChart() {
+      nextTick(() => {
+        const el = document.getElementById('rootCauseChart');
+        if (!el || !diagResult.value) return;
+        if (!rootCauseChart) rootCauseChart = echarts.init(el, 'dark');
+        const causes = diagResult.value.root_causes;
+        rootCauseChart.setOption({
+          backgroundColor: 'transparent',
+          tooltip: { trigger: 'item', backgroundColor: '#1E293B', borderColor: '#334155', textStyle: { color: '#F1F5F9' } },
+          series: [{
+            type: 'pie', radius: ['35%', '65%'],
+            label: { color: '#94A3B8', fontSize: 12, formatter: '{b}\n{d}%' },
+            labelLine: { lineStyle: { color: '#334155' } },
+            data: causes.map(c => ({ name: c.factor, value: c.weight })),
+            itemStyle: { borderRadius: 6, borderColor: '#1E293B', borderWidth: 2 },
+            color: ['#EF4444', '#F59E0B', '#818CF8', '#34D399', '#60A5FA'],
+            emphasis: { itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0, 0, 0, 0.5)' } },
+          }],
+          animationDuration: 800,
+        });
+      });
+    }
+
+    // Actions
+    function showWarningDetail(w) { selectedWarning.value = w; }
+
+    function showIssueDetail(issue) {
+      fetch('/api/issues/' + issue.id).then(r => r.json()).then(res => {
+        if (res.code === 0) selectedIssue.value = res.data;
+      });
+    }
+
+    function navigateToDiagnosis(warning) {
+      selectedWarning.value = null;
+      const mapping = { SALES: 'sales_decline', INVENTORY: 'inventory_excess', PROFIT: 'profit_decline' };
+      const type = mapping[warning.type] || 'sales_decline';
+      currentPage.value = 'diagnosis';
+      nextTick(() => runDiagnosis(type));
+    }
+
+    function createIssueFromWarning(warning) {
+      selectedWarning.value = null;
+      currentPage.value = 'issues';
+    }
+
+    async function runDiagnosis(type) {
+      diagType.value = type;
+      diagLoading.value = true;
+      diagResult.value = null;
+
+      // Simulate AI processing delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const res = await fetch('/api/diagnosis/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ indicator_type: type }),
+      }).then(r => r.json());
+
+      diagResult.value = res.data;
+      diagLoading.value = false;
+      renderRootCauseChart();
+    }
+
+    // Update time
+    function updateTime() {
+      const now = new Date();
+      currentTime.value = now.toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+
+    // Watch page changes
+    watch(currentPage, (page) => {
+      if (page === 'dashboard') {
+        nextTick(() => {
+          renderTrendChart();
+          renderBrandPieChart();
+          renderRegionBarChart();
+        });
+      }
+    });
+
+    // Handle window resize
+    function handleResize() {
+      trendChart && trendChart.resize();
+      brandPieChart && brandPieChart.resize();
+      regionBarChart && regionBarChart.resize();
+      rootCauseChart && rootCauseChart.resize();
+    }
+
+    onMounted(async () => {
+      updateTime();
+      setInterval(updateTime, 1000);
+      window.addEventListener('resize', handleResize);
+
+      await Promise.all([fetchDashboard(), fetchWarnings(), fetchIssues()]);
+
+      nextTick(() => {
+        renderTrendChart();
+        renderBrandPieChart();
+        renderRegionBarChart();
+      });
+    });
+
+    return {
+      currentPage, currentTime, pageTitle, pageSubtitle,
+      kpiData, kpiLabels, trendData, trendMetric, brandData, regionData,
+      warningStats, warnings, warningFilter, warningStatusFilter, filteredWarnings,
+      selectedWarning, severityLabels,
+      diagType, diagResult, diagLoading,
+      issueStats, issues, issueFilter, filteredIssues, selectedIssue,
+      statusLabels, priorityLabels,
+      renderTrendChart, showWarningDetail, showIssueDetail,
+      navigateToDiagnosis, createIssueFromWarning, runDiagnosis,
+    };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
